@@ -211,6 +211,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@nestjs/cli':
         specifier: ^12.0.0
@@ -233,9 +236,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@26.6.3)(@vitest/coverage-v8@4.1.11)(yaml@2.9.1)
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.5
 
   apps/web: {}
 
