@@ -11,6 +11,7 @@
   "type": "module",
   "scripts": {
     "check": "biome check .",
+    "check:all": "pnpm check && pnpm -r test:cov && pnpm -r typecheck && pnpm -r build",
     "fix": "biome check --write .",
     "prepare": "husky"
   },
