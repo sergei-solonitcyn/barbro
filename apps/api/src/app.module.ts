@@ -3,7 +3,5 @@ import { HealthModule } from "./health/health.module.js";
 
 @Module({
   imports: [HealthModule],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}
