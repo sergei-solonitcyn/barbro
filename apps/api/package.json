@@ -1,5 +1,5 @@
 {
-  "name": "barbro/api",
+  "name": "@barbro/api",
   "version": "0.0.1",
   "description": "BarBro HTTP API (NestJS on Fastify)",
   "private": true,
@@ -28,8 +28,9 @@
     "@nestjs/cli": "^12.0.0",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
+    "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "@vitest/coverage-v8": "^4.1.2"
+    "@vitest/coverage-v8": "catalog:"
   }
 }
