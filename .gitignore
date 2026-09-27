@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+coverage/
+.cache/
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+
+# Logs and runtime files
+*.log
+logs/
+pids/
+*.pid
+*.pid.lock
+
+# SQLite database files
+*.sqlite
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
