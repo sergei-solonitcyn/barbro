@@ -1,0 +1,20 @@
+{
+  "name": "barbro",
+  "description": "Home bar web app: track your bottles and see which cocktails you can make right now",
+  "author": "Sergei Solonitcyn (https://github.com/sergei-solonitcyn)",
+  "engines": {
+    "node": "^26.0.0"
+  },
+  "packageManager": "pnpm@12.6.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "check": "biome check .",
+    "fix": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "catalog:"
+  }
+}
