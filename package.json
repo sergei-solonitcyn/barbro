@@ -11,9 +11,16 @@
   "type": "module",
   "scripts": {
     "check": "biome check .",
-    "fix": "biome check --write ."
+    "fix": "biome check --write .",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14"
+    "@biomejs/biome": "2.5.14",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0"
+  },
+  "lint-staged": {
+    "*.{js,ts}": "biome check --fix",
+    "*.{json,yaml,yml}": "biome format --fix"
   }
 }
