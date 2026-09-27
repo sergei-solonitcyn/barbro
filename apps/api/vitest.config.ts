@@ -1,11 +1,9 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  // Resolves the path aliases declared in tsconfig.json, including the ones
-  // added by `nest g library`.
   plugins: [],
   test: {
-    globals: true,
+    globals: false,
     root: "./",
     include: ["**/*.spec.ts"],
   },

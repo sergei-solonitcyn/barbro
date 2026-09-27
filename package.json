@@ -14,7 +14,6 @@
     "fix": "biome check --write ."
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/node": "catalog:"
+    "@biomejs/biome": "2.5.14"
   }
 }

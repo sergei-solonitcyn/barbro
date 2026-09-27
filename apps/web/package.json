@@ -1,5 +1,5 @@
 {
-  "name": "barbro/web",
+  "name": "@barbro/web",
   "version": "0.0.1",
   "description": "BarBro web client (Vite + React SPA)",
   "private": true,
