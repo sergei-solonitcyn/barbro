@@ -21,7 +21,6 @@
     "lint-staged": "^17.6.0"
   },
   "lint-staged": {
-    "*.{js,ts}": "biome check --fix",
-    "*.{json,yaml,yml}": "biome format --fix"
+    "*.{js,jsx,ts,tsx,json,jsonc,css}": "biome check --write --no-errors-on-unmatched"
   }
 }
