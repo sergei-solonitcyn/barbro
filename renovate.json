@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7",
+      "description": [
+        "Hold TypeScript below 7: nest build needs the TypeScript programmatic API, which 7.0 lacks. Remove once NestJS supports TypeScript 7."
+      ]
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "description": ["Major version are upgrading manually."]
+    }
+  ]
+}
