@@ -128,7 +128,7 @@ jobs:
         run: .github/scripts/smoke-image.sh
 
   publish:
-    needs: [lint, typecheck, test, build, secrets, image]
+    needs: [ lint, typecheck, test, build, secrets, image ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -163,11 +163,12 @@ jobs:
             org.opencontainers.image.licenses=AGPL-3.0-or-later
           platforms: linux/amd64
           push: true
+          tags: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
 
       - name: Pull by digest
         env:
           IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
-        run: docker pull $IMAGE_REF
+        run: docker pull "$IMAGE_REF"
 
       - name: Smoke test pushed image
         env:
@@ -177,5 +178,5 @@ jobs:
 
       - name: Record digest
         env:
-            IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
         run: echo "Published \`$IMAGE_REF\`" >> "$GITHUB_STEP_SUMMARY"
