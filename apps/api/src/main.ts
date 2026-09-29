@@ -21,7 +21,7 @@ async function bootstrap() {
     return;
   }
   const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
+    AppModule.forRoot(env),
     createAdapter(),
   );
   configureApp(app);
