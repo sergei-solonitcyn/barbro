@@ -4,6 +4,14 @@ on:
   schedule:
     - cron: "17 */4 * * *"
   workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Renovate log level'
+        type: choice
+        options:
+          - debug
+          - info
+        default: info
 
 concurrency:
   group: renovate
@@ -24,7 +32,8 @@ jobs:
         id: renovate-app-token
       - uses: renovatebot/github-action@1cd96b855fee0da6f230617e89dbff0e06ea393a # v46.3.5
         env:
-          LOG_LEVEL: debug
+          LOG_LEVEL: ${{ inputs.log_level || 'info' }}
+          RENOVATE_DOCKER_MAX_PAGES: 10
           RENOVATE_PLATFORM_COMMIT: enabled
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
