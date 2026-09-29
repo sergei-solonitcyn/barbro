@@ -18,10 +18,10 @@
       "customType": "regex",
       "datasourceTemplate": "docker",
       "description": ["Update the pinned 'Renovate' image tag and digest."],
-      "depNameTemplate": "ghcr.io/renovatebot/renovate",
+      "depNameTemplate": "renovate/renovate",
       "managerFilePatterns": [".github/workflows/renovate.yaml"],
       "matchStrings": [
-        "renovate-image:\\s+[\"']?ghcr\\.io/renovatebot/renovate:(?<currentValue>\\d+\\.\\d+\\.\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+        "renovate-image:\\s+[\"']?docker\\.io/renovate/renovate:(?<currentValue>\\d+\\.\\d+\\.\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ]
     }
   ],
