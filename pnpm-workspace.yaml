@@ -8,6 +8,7 @@ catalog:
   "zod": ^4.6.5
 
 engineStrict: true
+injectWorkspacePackages: true
 minimumReleaseAge: 1440
 packages:
   - 'apps/*'
