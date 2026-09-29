@@ -26,7 +26,8 @@ USER 65532:65532
 
 EXPOSE 3000
 
-CMD ["dist/main.js"]
+#CMD ["dist/main.js"]
+CMD ["broken"]
 
 ARG APP_REVISION
 ENV APP_REVISION=$APP_REVISION
