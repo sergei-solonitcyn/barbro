@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-:"${IMAGE:?IMAGE is required}"
+: "${IMAGE:?IMAGE is required}"
 : "${EXPECTED_REVISION:?EXPECTED_REVISION is required}"
 
 container="smoke-$$"
