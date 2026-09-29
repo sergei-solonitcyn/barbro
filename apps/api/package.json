@@ -2,9 +2,12 @@
   "name": "@barbro/api",
   "version": "0.0.1",
   "description": "BarBro HTTP API (NestJS on Fastify)",
+  "files": [
+    "dist"
+  ],
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
-  "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "nest build",
     "start": "nest start",

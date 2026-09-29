@@ -25,6 +25,7 @@ async function bootstrap() {
     createAdapter(),
   );
   configureApp(app);
+  app.enableShutdownHooks();
   await app.listen(env.port, env.host);
 }
 await bootstrap();
