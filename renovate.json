@@ -1,6 +1,31 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-release-attachments",
+      "description": [
+        "Update the 'gitleaks' version and its tarball SHA-256 in CI."
+      ],
+      "depNameTemplate": "gitleaks/gitleaks",
+      "managerFilePatterns": [".github/workflows/ci.yaml"],
+      "matchStrings": [
+        "GITLEAKS_VERSION:\\s+(?<currentValue>v\\d+\\.\\d+\\.\\d+)\\s+GITLEAKS_SHA256:\\s+(?<currentDigest>[a-f0-9]{64})"
+      ]
+    },
+    {
+      "customType": "regex",
+      "datasourceTemplate": "docker",
+      "description": ["Update the pinned 'Renovate' image tag and digest."],
+      "depNameTemplate": "ghcr.io/renovatebot/renovate",
+      "managerFilePatterns": [".github/workflows/renovate.yaml"],
+      "matchStrings": [
+        "renovate-image:\\s+[\"']?ghcr\\.io/renovatebot/renovate:(?<currentValue>\\d+\\.\\d+\\.\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ]
+    }
+  ],
+  "minimumReleaseAge": "3 days",
   "packageRules": [
     {
       "matchPackageNames": ["typescript"],
@@ -12,7 +37,9 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
-      "description": ["Major version are upgrading manually."]
+      "description": [
+        "Automerge non-major updates; major updates are merged by hand."
+      ]
     }
   ]
 }
