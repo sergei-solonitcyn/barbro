@@ -173,7 +173,7 @@ jobs:
         env:
           IMAGE: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_REVISION: ${{ github.sha }}
-        run: .github/workflows/smoke-test.sh
+        run: .github/scripts/smoke-test.sh
 
       - name: Record digest
         env:
