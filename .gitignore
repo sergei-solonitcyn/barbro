@@ -36,3 +36,7 @@ Thumbs.db
 *.iml
 *.swp
 *.swo
+
+# Package manager files
+ **/pnpm-lock.yaml
+ !/pnpm-lock.yaml
