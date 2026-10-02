@@ -103,7 +103,7 @@ jobs:
           persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - name: Cache Node version sync
+      - name: Check Node version sync
         run: |
           nvmrc="$(tr -d '[:space:]' < .nvmrc)"
           if ! grep -Eq "^FROM node:${nvmrc//./\\.}-" apps/api/Dockerfile; then
