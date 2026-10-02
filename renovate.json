@@ -40,6 +40,23 @@
       "description": [
         "Automerge non-major updates; major updates are merged by hand."
       ]
+    },
+    {
+      "description": [
+        "Keep .nvmrc and the Dockerfile build-stage Node version in one PR."
+      ],
+      "matchDepNames": ["node"],
+      "matchManagers": ["nvm", "dockerfile"],
+      "groupName": "Node.js"
+    },
+    {
+      "description": [
+        "Distroless uses an unversioned tag on gcr.io, which has no release timestamps, so digest updates can never pass minimumReleaseAge. Raise them without the age check; the CI image smoke test gates them."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["gcr.io/distroless/nodejs26-debian13"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ]
 }
