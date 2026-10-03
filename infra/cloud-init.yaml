@@ -87,6 +87,7 @@ packages:
   - docker-ce-cli
   - containerd.io
   - docker-compose-plugin
+  - jq
   - unattended-upgrades
 
 write_files:

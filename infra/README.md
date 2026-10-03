@@ -8,9 +8,10 @@ Bootstrap for BarBro's single production server on Hetzner Cloud.
 - sshd hardening (key-only authentication, no root login, `AllowUsers ss`);
 - Docker Engine and the Compose plugin from Docker's apt repository, with Docker's signing key pinned inline;
 - the `local` Docker log driver (rotated, compressed) and `live-restore`;
-- `unattended-upgrades` with a nightly automatic reboot.
+- `unattended-upgrades` with a nightly automatic reboot;
+- `jq` for the deploy agent.
 
-cloud-init runs **once, on the first boot**. Editing the file does not change a running server — to apply a change, recreate the server. Application deployment is not part of this file.
+cloud-init runs **once, on the first boot**. Editing the file does not change a running server — to apply a change, recreate the server. Application deployment is done by the deploy agent (below).
 
 ## Create the server
 
@@ -44,15 +45,15 @@ ssh-keygen -R <ip>
 
 Log in as `ss` (`ssh barbro`). The login itself proves that the user data was applied; a password prompt means it was not — log in as root with the key selected at creation and check the first command below.
 
-| Command | Expected |
-|---|---|
-| `curl -s http://169.254.169.254/hetzner/v1/userdata \| head -1` | `#cloud-config` |
-| `cloud-init status --wait --long` | `status: done`, `errors: []` |
-| `sudo sshd -T \| grep -Ei '^(permitrootlogin\|passwordauthentication\|kbdinteractiveauthentication\|allowusers)'` | `no`, `no`, `no`, `ss` |
-| `docker info --format '{{.LoggingDriver}} {{.LiveRestoreEnabled}}'` | `local true` |
-| `docker compose version` | a version string |
-| `sudo unattended-upgrade --dry-run --debug 2>&1 \| grep -i 'allowed origins'` | Debian and Debian-Security origins for `trixie` |
-| `sudo grep -iE 'error\|traceback' /var/log/cloud-init.log` | nothing, or only `DEBUG` lines about a metadata request retried before the network was up |
+| Command                                                                                                           | Expected                                                                                  |
+|-------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `curl -s http://169.254.169.254/hetzner/v1/userdata \| head -1`                                                   | `#cloud-config`                                                                           |
+| `cloud-init status --wait --long`                                                                                 | `status: done`, `errors: []`                                                              |
+| `sudo sshd -T \| grep -Ei '^(permitrootlogin\|passwordauthentication\|kbdinteractiveauthentication\|allowusers)'` | `no`, `no`, `no`, `ss`                                                                    |
+| `docker info --format '{{.LoggingDriver}} {{.LiveRestoreEnabled}}'`                                               | `local true`                                                                              |
+| `docker compose version`                                                                                          | a version string                                                                          |
+| `sudo unattended-upgrade --dry-run --debug 2>&1 \| grep -i 'allowed origins'`                                     | Debian and Debian-Security origins for `trixie`                                           |
+| `sudo grep -iE 'error\|traceback' /var/log/cloud-init.log`                                                        | nothing, or only `DEBUG` lines about a metadata request retried before the network was up |
 
 Negative check — must fail:
 
@@ -84,6 +85,41 @@ docker run --rm -e DEBIAN_FRONTEND=noninteractive -v "$PWD/infra:/w:ro" debian:t
 ```
 
 Pass: a `Get:… trixie/stable … Packages` line and no `W:`/`E:` lines. The key's fingerprint must be `9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88` (`gpg --show-keys`).
+
+## Deploy agent
+
+`deploy/` holds the pull deploy agent (ADR-0007 in `barbro-docs`): `barbro-deploy` runs as the `barbro` system user, started by `barbro-deploy.timer` every 5 minutes. Each run deploys the HEAD of `main` once its CI push run has succeeded: it resolves `sha-<commit>` of both images to digests, fetches `infra/` of that commit, runs `docker compose pull` and `up -d` with the digests, and waits until `/api/health` and `/revision` report the commit. If they do not, it rolls back to the running revision and marks the commit bad.
+
+State is in `/var/lib/barbro`: `current` and `previous` (revision and image digests), `bad` (one revision per line — delete a line to let the agent retry it), `releases/<commit>/infra/`.
+
+### Install or update the agent
+
+The agent does not update itself: after a change in `deploy/`, repeat the install. From a checkout of `main`:
+
+```sh
+scp -r infra/deploy barbro:/tmp/
+ssh barbro
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/barbro --shell /usr/sbin/nologin barbro  # first install only
+sudo install -m 0755 /tmp/deploy/barbro-deploy /usr/local/bin/
+sudo install -m 0644 /tmp/deploy/barbro-deploy.service /tmp/deploy/barbro-deploy.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now barbro-deploy.timer  # first install only
+```
+
+### Operate
+
+| Task                    | Command                                                                         |
+|-------------------------|---------------------------------------------------------------------------------|
+| Run now                 | `sudo systemctl start barbro-deploy`                                            |
+| Log                     | `journalctl -u barbro-deploy -n 50 --no-pager`                                  |
+| Next run                | `systemctl list-timers barbro-deploy.timer`                                     |
+| Deployed revision       | `cat /var/lib/barbro/current`                                                   |
+| Roll back or freeze     | `echo <commit> \| sudo tee /etc/barbro/pin` (after `sudo mkdir -p /etc/barbro`) |
+| Resume following `main` | `sudo rm /etc/barbro/pin`                                                       |
+
+A pinned commit is deployed without the CI check, but its images must exist and it must pass the health check.
+
+The GitHub REST API allows 60 unauthenticated requests per hour per IP; the agent uses 24 (two per run). A `403` in the log means the limit was exceeded — for example by manual runs in quick succession.
 
 ## Updates
 
