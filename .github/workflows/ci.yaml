@@ -97,6 +97,15 @@ jobs:
   image:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [
+          api,
+          web
+        ]
+    env:
+      APP: ${{ matrix.app }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -106,7 +115,7 @@ jobs:
       - name: Check Node version sync
         run: |
           nvmrc="$(tr -d '[:space:]' < .nvmrc)"
-          if ! grep -Eq "^FROM node:${nvmrc//./\\.}-" apps/api/Dockerfile; then
+          if ! grep -Eq "^FROM node:${nvmrc//./\\.}-" apps/${{ matrix.app }}/Dockerfile; then
             echo "Dockerfile build stage does not match .nvmrc ($nvmrc)" >&2
             exit 1
           fi
@@ -115,10 +124,10 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: apps/${{ matrix.app }}/Dockerfile
           build-args: APP_REVISION=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -127,13 +136,13 @@ jobs:
           platforms: linux/amd64
           provenance: false
           push: false
-          tags: barbro-api:ci
+          tags: barbro-${{matrix.app }}:ci
 
       - name: Smoke test
         env:
-          IMAGE: barbro-api:ci
+          IMAGE: barbro-${{matrix.app }}:ci
           EXPECTED_REVISION: ${{ github.sha }}
-        run: .github/scripts/smoke-image.sh
+        run: .github/scripts/smoke-${{matrix.app }}-image.sh
 
   publish:
     needs: [ lint, typecheck, test, build, secrets, image ]
@@ -143,8 +152,16 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [
+          api,
+          web
+        ]
     env:
-      IMAGE_NAME: ghcr.io/sergei-solonitcyn/barbro-api
+      APP: ${{ matrix.app }}
+      IMAGE_NAME: ghcr.io/sergei-solonitcyn/barbro-${{ matrix.app }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -161,10 +178,10 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: apps/${{ matrix.app }}/Dockerfile
           build-args: APP_REVISION=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -182,7 +199,7 @@ jobs:
         env:
           IMAGE: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_REVISION: ${{ github.sha }}
-        run: .github/scripts/smoke-image.sh
+        run: .github/scripts/smoke-${{ matrix.app }}-image.sh
 
       - name: Record digest
         env:
