@@ -1,0 +1,19 @@
+[Unit]
+Description=BarBro pull deploy (ADR-0007)
+Documentation=https://github.com/sergei-solonitcyn/barbro/tree/main/infra
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=barbro
+Group=barbro
+# The docker group is root-equivalent; the dedicated user separates state and journal entries, not privilege.
+SupplementaryGroups=docker
+StateDirectory=barbro
+Environment=DOCKER_CONFIG=%S/barbro/.docker
+ExecStart=/usr/local/bin/barbro-deploy
+TimeoutStartSec=15min
+NoNewPrivileges=yes
+PrivateTmp=yes

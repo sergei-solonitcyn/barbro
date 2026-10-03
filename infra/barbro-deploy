@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# Pull deploy agent, ADR-0007. Started by barbro-deploy.timer every 5 minutes.
+#
+# One cycle: pick the target revision (the green HEAD of main, or the pin file),
+# resolve both images to digests, fetch infra/ of that revision, pull, up,
+# check that both services report the target revision; on failure roll back
+# to the running revision and mark the target bad.
+#
+# State lives in $STATE_DIR (systemd StateDirectory):
+#   current, previous   REVISION, API_IMAGE, WEB_IMAGE of a deployed revision
+#   bad                 revisions that failed the health check, one per line;
+#                       delete a line to let the agent retry that revision
+#   releases/<sha>/     infra/ of that revision
+# Exit codes: 0 deployed or nothing to do, 1 error (see the journal).
+set -euo pipefail
+
+readonly REPO="sergei-solonitcyn/barbro"
+readonly NAMESPACE="sergei-solonitcyn"
+readonly WORKFLOW="ci.yaml"
+readonly PIN_FILE="/etc/barbro/pin"
+readonly STATE_DIR="${STATE_DIRECTORY:-/var/lib/barbro}"
+readonly KEEP_RELEASES=5
+# Health endpoints are the localhost ports published in infra/compose.yaml.
+readonly API_HEALTH_URL="http://127.0.0.1:3000/api/health"
+readonly WEB_REVISION_URL="http://127.0.0.1:8081/revision"
+# Overridable for tests only.
+readonly GITHUB_API="${GITHUB_API:-https://api.github.com}"
+readonly REGISTRY="${REGISTRY:-https://ghcr.io}"
+readonly CODELOAD="${CODELOAD:-https://codeload.github.com}"
+readonly HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
+
+log() { echo "$*"; }
+die() { echo "error: $*" >&2; exit 1; }
+
+github() { # $1 path under /repos/$REPO, $2 Accept
+  curl -fsS --max-time 20 -H "Accept: $2" -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$GITHUB_API/repos/$REPO/$1"
+}
+
+main_head() {
+  github commits/main application/vnd.github.sha
+}
+
+# Prints the number of successful push runs of the CI workflow on main for $1.
+green_runs() {
+  github "actions/workflows/$WORKFLOW/runs?branch=main&event=push&status=success&head_sha=$1&per_page=1" \
+    application/vnd.github+json | jq -er '.total_count'
+}
+
+# Prints the digest behind $1:$2 (image name, tag) without pulling; fails if the tag does not exist.
+resolve_digest() {
+  local token digest
+  token="$(curl -fsS --max-time 20 "$REGISTRY/token?scope=repository:$NAMESPACE/$1:pull" \
+    | jq -er '.token')" || return 1
+  digest="$(curl -fsSI --max-time 20 -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
+    "$REGISTRY/v2/$NAMESPACE/$1/manifests/$2" \
+    | tr -d '\r' | sed -n 's/^docker-content-digest: //Ip')" || return 1
+  [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || return 1
+  echo "$digest"
+}
+
+# Extracts infra/ of revision $1 into releases/$1 (once).
+fetch_infra() {
+  local dir="$STATE_DIR/releases/$1"
+  [[ -f "$dir/infra/compose.yaml" ]] && return 0
+  rm -rf "$dir.tmp" && mkdir -p "$dir.tmp" || return 1
+  curl -fsSL --max-time 60 "$CODELOAD/$REPO/tar.gz/$1" \
+    | tar -xz -C "$dir.tmp" --strip-components=1 --wildcards '*/infra/*' || return 1
+  [[ -f "$dir.tmp/infra/compose.yaml" ]] || return 1
+  mv "$dir.tmp" "$dir"
+}
+
+compose() { # $1 revision, $2 api image, $3 web image, then compose arguments
+  local revision="$1" api="$2" web="$3"
+  shift 3
+  API_IMAGE="$api" WEB_IMAGE="$web" docker compose -p barbro \
+    -f "$STATE_DIR/releases/$revision/infra/compose.yaml" "$@"
+}
+
+# Waits until both services report revision $1.
+healthy() {
+  local deadline=$((SECONDS + HEALTH_TIMEOUT)) api="" web=""
+  while ((SECONDS < deadline)); do
+    api="$(curl -fsS --max-time 5 "$API_HEALTH_URL" 2>/dev/null | jq -r '.revision' 2>/dev/null || true)"
+    web="$(curl -fsS --max-time 5 "$WEB_REVISION_URL" 2>/dev/null || true)"
+    [[ "$api" == "$1" && "$web" == "$1" ]] && return 0
+    sleep 2
+  done
+  log "health check: api reports '${api:-nothing}', web reports '${web:-nothing}', expected $1"
+  return 1
+}
+
+state_get() { # $1 file (current | previous), $2 key
+  sed -n "s/^$2=//p" "$STATE_DIR/$1" 2>/dev/null || true
+}
+
+state_set() { # $1 file, $2 revision, $3 api image, $4 web image
+  printf 'REVISION=%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$2" "$3" "$4" >"$STATE_DIR/$1.tmp"
+  mv "$STATE_DIR/$1.tmp" "$STATE_DIR/$1"
+}
+
+is_bad() {
+  grep -qx "$1" "$STATE_DIR/bad" 2>/dev/null
+}
+
+prune() {
+  local current previous dir
+  current="$(state_get current REVISION)"
+  previous="$(state_get previous REVISION)"
+  # Release directory names are revisions (hex), so ls output is safe to read.
+  # shellcheck disable=SC2012
+  ls -1t "$STATE_DIR/releases" | tail -n "+$((KEEP_RELEASES + 1))" | while read -r dir; do
+    [[ "$dir" == "$current" || "$dir" == "$previous" ]] || rm -rf "${STATE_DIR:?}/releases/$dir"
+  done
+  # Unused images built more than a week ago; a rollback re-pulls them by digest if needed.
+  docker image prune -af --filter "until=168h" >/dev/null || log "warning: image prune failed"
+}
+
+main() {
+  local target source current count api_digest web_digest api_image web_image
+
+  if [[ -s "$PIN_FILE" ]]; then
+    target="$(tr -d '[:space:]' <"$PIN_FILE")"
+    source="pin file"
+  else
+    target="$(main_head)" || die "cannot read the HEAD of main from GitHub"
+    source="main"
+  fi
+  # Also guards the API query: an empty head_sha filter would match any run.
+  [[ "$target" =~ ^[0-9a-f]{40}$ ]] || die "invalid target revision '$target' from $source"
+
+  current="$(state_get current REVISION)"
+  [[ "$target" == "$current" ]] && exit 0
+  is_bad "$target" && exit 0
+
+  if [[ "$source" == "main" ]]; then
+    count="$(green_runs "$target")" || die "cannot read CI runs from GitHub"
+    ((count > 0)) || exit 0 # CI still running or red: wait for the next green merge
+  fi
+
+  log "deploying $target from $source (running: ${current:-nothing})"
+
+  api_digest="$(resolve_digest barbro-api "sha-$target")" || die "no barbro-api image for $target"
+  web_digest="$(resolve_digest barbro-web "sha-$target")" || die "no barbro-web image for $target"
+  api_image="ghcr.io/$NAMESPACE/barbro-api@$api_digest"
+  web_image="ghcr.io/$NAMESPACE/barbro-web@$web_digest"
+  log "images: $api_image $web_image"
+
+  fetch_infra "$target" || die "cannot fetch infra/ for $target"
+  compose "$target" "$api_image" "$web_image" pull --quiet || die "pull failed for $target"
+
+  if compose "$target" "$api_image" "$web_image" up -d --remove-orphans && healthy "$target"; then
+    [[ -n "$current" ]] && cp "$STATE_DIR/current" "$STATE_DIR/previous"
+    state_set current "$target" "$api_image" "$web_image"
+    log "deployed $target"
+    prune
+    exit 0
+  fi
+
+  echo "$target" >>"$STATE_DIR/bad"
+  log "deploy of $target failed; marked bad"
+  if [[ -n "$current" ]]; then
+    if compose "$current" "$(state_get current API_IMAGE)" "$(state_get current WEB_IMAGE)" \
+      up -d --remove-orphans && healthy "$current"; then
+      log "rolled back to $current"
+    else
+      log "rollback to $current failed"
+    fi
+  fi
+  exit 1
+}
+
+main "$@"
