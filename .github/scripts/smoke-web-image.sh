@@ -36,7 +36,7 @@ if [[ "$user" != "65532:65532" ]]; then
 fi
 
 "$cli" run -d --name "$container" -p 127.0.0.1:8080:8080 \
-  --read-only --tmpfs /data --cap-drop ALL --security-opt no-new-privileges \
+  --read-only --tmpfs /data:uid=65532,gid=65532,mode=0700 --cap-drop ALL --security-opt no-new-privileges \
   "$IMAGE" >/dev/null
 
 index="$(curl -fsS --retry 15 --retry-delay 1 --retry-all-errors "$base_url/")" \
