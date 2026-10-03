@@ -15,7 +15,7 @@ RUN pnpm --filter @barbro/web... build
 
 FROM caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b AS runtime
 
-#RUN setcap -r /usr/bin/caddy
+RUN setcap -r /usr/bin/caddy
 
 COPY apps/web/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /workspace/apps/web/dist /srv
