@@ -5,18 +5,23 @@ set -euo pipefail
 : "${EXPECTED_REVISION:?EXPECTED_REVISION is required}"
 
 cli="${CONTAINER_CLI:-docker}"
-base_url="http://127.0.0.1:8080"
-container="smoke-web-$$"
+
+# Runs the service through infra/compose.yaml, so CI tests the production runtime flags.
+# Compose interpolates the whole file, including the service this script never starts;
+# that image is never pulled. -p keeps the smoke run apart from a running "barbro" project.
+export API_IMAGE=unused WEB_IMAGE="$IMAGE"
+compose=("$cli" compose -p barbro-smoke -f infra/compose.yaml)
+base_url="http://127.0.0.1:8081"
 
 cleanup() {
-  "$cli" rm -f "$container" >/dev/null 2>&1 || true
+  "${compose[@]}" down >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 fail() {
   echo "Smoke test failed: $*" >&2
   echo "Container logs:" >&2
-  "$cli" logs "$container" >&2 || true
+  "${compose[@]}" logs web >&2 || true
   exit 1
 }
 
@@ -30,14 +35,9 @@ header_of() {
 }
 
 user="$("$cli" image inspect --format '{{.Config.User}}' "$IMAGE")"
-if [[ "$user" != "65532:65532" ]]; then
-  echo "Smoke test failed: image user is '$user', expected 65532:65532" >&2
-  exit 1
-fi
+[[ "$user" == "65532:65532" ]] || fail "image user is '$user', expected 65532:65532"
 
-"$cli" run -d --name "$container" -p 127.0.0.1:8080:8080 \
-  --read-only --tmpfs /data:uid=65532,gid=65532,mode=0700 --cap-drop ALL --security-opt no-new-privileges \
-  "$IMAGE" >/dev/null
+"${compose[@]}" up -d web
 
 index="$(curl -fsS --retry 15 --retry-delay 1 --retry-all-errors "$base_url/")" \
   || fail "GET / did not succeed"
@@ -59,7 +59,7 @@ revision="$(curl -fsS "$base_url/revision")" || fail "GET /revision did not succ
 [[ "$revision" == "$EXPECTED_REVISION" ]] \
   || fail "revision is '$revision', expected '$EXPECTED_REVISION'"
 
-logs="$("$cli" logs "$container" 2>&1)"
+logs="$("${compose[@]}" logs web 2>&1)"
 if grep -q '"level":"error"' <<<"$logs"; then
   fail "error in container logs"
 fi
