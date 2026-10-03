@@ -136,7 +136,10 @@ main() {
 
   if [[ "$source" == "main" ]]; then
     count="$(green_runs "$target")" || die "cannot read CI runs from GitHub"
-    ((count > 0)) || exit 0 # CI still running or red: wait for the next green merge
+    if ((count == 0)); then
+      log "waiting: no successful CI run for $target yet"
+      exit 0
+    fi
   fi
 
   log "deploying $target from $source (running: ${current:-nothing})"
