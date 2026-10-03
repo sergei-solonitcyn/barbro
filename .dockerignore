@@ -12,4 +12,9 @@ apps/api/coverage
 apps/api/dist
 apps/api/node_modules
 
+!apps/web
+apps/web/coverage
+apps/web/dist
+apps/web/node_modules
+
 **/.env*
