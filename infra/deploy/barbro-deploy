@@ -20,9 +20,11 @@ readonly WORKFLOW="ci.yaml"
 readonly PIN_FILE="/etc/barbro/pin"
 readonly STATE_DIR="${STATE_DIRECTORY:-/var/lib/barbro}"
 readonly KEEP_RELEASES=5
-# Health endpoints are the localhost ports published in infra/compose.yaml.
-readonly API_HEALTH_URL="http://127.0.0.1:3000/api/health"
-readonly WEB_REVISION_URL="http://127.0.0.1:8081/revision"
+
+# Health endpoints are checked through the edge, so a broken edge fails the deploy.
+readonly API_HEALTH_URL="http://127.0.0.1:8082/api/health"
+readonly WEB_REVISION_URL="http://127.0.0.1:8082/revision"
+
 # Overridable for tests only.
 readonly GITHUB_API="${GITHUB_API:-https://api.github.com}"
 readonly REGISTRY="${REGISTRY:-https://ghcr.io}"

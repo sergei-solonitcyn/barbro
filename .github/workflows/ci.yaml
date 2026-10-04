@@ -144,8 +144,51 @@ jobs:
           EXPECTED_REVISION: ${{ github.sha }}
         run: .github/scripts/smoke-${{matrix.app }}-image.sh
 
+  system:
+    needs: [ image ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build API image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          build-args: APP_REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=api
+          load: true
+          platforms: linux/amd64
+          provenance: false
+          push: false
+          tags: barbro-api:ci
+
+      - name: Build web image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          build-args: APP_REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=web
+          load: true
+          platforms: linux/amd64
+          provenance: false
+          push: false
+          tags: barbro-web:ci
+
+      - name: Smoke test through edge
+        env:
+          API_IMAGE: barbro-api:ci
+          WEB_IMAGE: barbro-web:ci
+          EXPECTED_REVISION: ${{ github.sha }}
+        run: .github/scripts/smoke-system.sh
+
   publish:
-    needs: [ lint, typecheck, test, build, secrets, image ]
+    needs: [ lint, typecheck, test, build, secrets, image, system ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
