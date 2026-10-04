@@ -46,3 +46,20 @@ services:
     user: "65532:65532"
     volumes:
       - ./edge/Caddyfile:/etc/caddy/Caddyfile:ro
+
+  tunnel:
+    <<: *hardening
+    image: cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c
+    command: [ "tunnel", "--grace-period", "15s", "run", "--token-file", "/run/secrets/tunnel-token" ]
+    depends_on:
+      - edge
+    profiles:
+      - tunnel
+    secrets:
+      - tunnel-token
+    stop_grace_period: 20s
+
+secrets:
+  tunnel-token:
+    # Created by hand on the server; see infra/README.md.
+    file: /etc/barbro/tunnel-token
