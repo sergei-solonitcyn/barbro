@@ -76,7 +76,7 @@ fetch_infra() {
 compose() { # $1 revision, $2 api image, $3 web image, then compose arguments
   local revision="$1" api="$2" web="$3"
   shift 3
-  API_IMAGE="$api" WEB_IMAGE="$web" docker compose -p barbro \
+  API_IMAGE="$api" WEB_IMAGE="$web" COMPOSE_PROFILES=tunnel docker compose -p barbro \
     -f "$STATE_DIR/releases/$revision/infra/compose.yaml" "$@"
 }
 
