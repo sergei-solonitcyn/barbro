@@ -25,6 +25,8 @@ pids/
 
 # SQLite database files
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # Operating system files
 .DS_Store
