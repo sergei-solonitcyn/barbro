@@ -37,5 +37,5 @@ jobs:
           RENOVATE_PLATFORM_COMMIT: enabled
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
-          renovate-image: "docker.io/renovate/renovate:44.131.1@sha256:97e105f252a3095a78a4c5a0c561c09db7bf98f1c56478f6491dec1ad18624d4"
+          renovate-image: "docker.io/renovate/renovate:44.132.0@sha256:c300e5c81ebb9a68d19f5f7c9df85f4b20d40a2c813f9199e3f61e2a68c69003"
           token: ${{ steps.renovate-app-token.outputs.token }}
