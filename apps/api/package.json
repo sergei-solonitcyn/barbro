@@ -32,9 +32,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@nestjs/cli": "^12.0.0",
-    "@nestjs/schematics": "^12.0.0",
-    "@nestjs/testing": "^12.0.1",
+    "@nestjs/cli": "12.0.8",
+    "@nestjs/schematics": "12.0.6",
+    "@nestjs/testing": "12.1.2",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
