@@ -19,7 +19,7 @@ services:
       - "127.0.0.1:3000:3000"
     stop_grace_period: 20s
     volumes:
-      - ./api-data:/data
+      - api-data:/data
 
   web:
     <<: *hardening
