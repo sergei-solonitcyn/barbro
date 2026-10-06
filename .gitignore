@@ -15,6 +15,7 @@ coverage/
 .env
 .env.*
 !.env.example
+infra/compose.podman.local.yaml
 
 # Logs and runtime files
 *.log
@@ -25,6 +26,9 @@ pids/
 
 # SQLite database files
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+infra/api/data
 
 # Operating system files
 .DS_Store

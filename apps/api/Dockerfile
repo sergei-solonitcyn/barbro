@@ -14,11 +14,15 @@ RUN pnpm --filter @barbro/api... install --offline --frozen-lockfile
 RUN pnpm --filter @barbro/api... build
 RUN pnpm --filter @barbro/api deploy --prod /out
 
+RUN mkdir /data-dir
+
 FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:2ee7b2c54a3e37dfc248af81c9f6bcdcaa50abe4af44aa47a3388431031b9283 AS runtime
 
 WORKDIR /app
 
 COPY --from=build /out/ ./
+
+COPY --from=build --chown=65532:65532 --chmod=700 /data-dir /data
 
 ENV HOST=0.0.0.0
 

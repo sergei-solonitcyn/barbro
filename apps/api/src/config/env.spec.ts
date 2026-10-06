@@ -4,7 +4,9 @@ import { parseEnv } from "./env.js";
 
 describe("parseEnv", () => {
   it("returns correct defaults", () => {
-    const env = parseEnv({});
+    const env = parseEnv({
+      DB_PATH: "custom_path.sqlite",
+    });
 
     expect(env.host).toBe("127.0.0.1");
     expect(env.port).toBe(3000);
@@ -13,6 +15,7 @@ describe("parseEnv", () => {
   it("returns correct values", () => {
     const env = parseEnv({
       APP_REVISION: "abc123",
+      DB_PATH: "custom_path.sqlite",
       HOST: "0.0.0.0",
       PORT: "8080",
     });
@@ -20,6 +23,7 @@ describe("parseEnv", () => {
     expect(env.host).toBe("0.0.0.0");
     expect(env.port).toBe(8080);
     expect(env.revision).toBe("abc123");
+    expect(env.dbPath).toBe("custom_path.sqlite");
   });
 
   it("throws ZodError if HOST is empty", () => {
@@ -79,7 +83,9 @@ describe("parseEnv", () => {
   });
 
   it("returns 'revision' as default 'dev' if absent", () => {
-    const env = parseEnv({});
+    const env = parseEnv({
+      DB_PATH: "custom_path.sqlite",
+    });
     expect(env.revision).toBe("dev");
   });
 
@@ -87,6 +93,28 @@ describe("parseEnv", () => {
     expect(() => {
       parseEnv({
         APP_REVISION: "",
+      });
+    }).toThrow(ZodError);
+  });
+
+  it("throws ZodError if DB_PATH is empty", () => {
+    expect(() => {
+      parseEnv({
+        DB_PATH: "",
+      });
+    }).toThrow(ZodError);
+  });
+
+  it("throws ZodError if DB_PATH is absent", () => {
+    expect(() => {
+      parseEnv({});
+    }).toThrow(ZodError);
+  });
+
+  it("throws ZodError if DB_PATH is not a valid file path", () => {
+    expect(() => {
+      parseEnv({
+        DB_PATH: "invalid\0path",
       });
     }).toThrow(ZodError);
   });

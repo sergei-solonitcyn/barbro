@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791223124839,
+      "tag": "0000_pink_maggott",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791223946785,
+      "tag": "0001_jazzy_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791224513160,
+      "tag": "0002_hesitant_plazm",
+      "breakpoints": true
+    }
+  ]
+}

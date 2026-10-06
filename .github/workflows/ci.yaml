@@ -137,7 +137,6 @@ jobs:
           provenance: false
           push: false
           tags: barbro-${{matrix.app }}:ci
-
       - name: Smoke test
         env:
           IMAGE: barbro-${{matrix.app }}:ci
