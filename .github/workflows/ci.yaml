@@ -140,9 +140,9 @@ jobs:
 
       - name: Debug /data ownership (temporary)
         run: |
-          docker create --name t barbro-${{ matrix.app }}:ci >/dev/null
-          docker export t | tar -tvf - | grep -E ' data/?$' || echo "no /data in image"
-          docker rm t >/dev/null
+          cid=$(docker create "barbro-${{ matrix.app }}:ci")
+          docker export "$cid" | tar -tvf - | grep -E ' data/?$' || echo "no /data in image"
+          docker rm "$cid" >/dev/null
 
       - name: Smoke test
         env:
