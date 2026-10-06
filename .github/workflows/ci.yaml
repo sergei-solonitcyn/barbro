@@ -137,19 +137,6 @@ jobs:
           provenance: false
           push: false
           tags: barbro-${{matrix.app }}:ci
-
-      - name: Debug /data ownership (temporary)
-        run: |
-          [ "${{ matrix.app }}" = api ] || exit 0
-          export API_IMAGE=barbro-api:ci WEB_IMAGE=x
-          c="docker compose -p dbg -f infra/compose.yaml"
-          $c config api
-          $c up -d api
-          sleep 3
-          docker inspect -f '{{json .Mounts}}' dbg-api-1
-          docker run --rm -v dbg_api-data:/v busybox:1.37 stat -c '%u:%g %a' /v
-          $c logs api 2>&1 | grep -m1 -E 'CANTOPEN|successfully started'
-
       - name: Smoke test
         env:
           IMAGE: barbro-${{matrix.app }}:ci
