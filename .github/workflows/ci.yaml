@@ -141,15 +141,14 @@ jobs:
       - name: Debug /data ownership (temporary)
         run: |
           [ "${{ matrix.app }}" = api ] || exit 0
-          docker volume create pre >/dev/null
-          for v in pre auto; do
-            docker run -d --name "dbg-$v" -v "$v:/data" \
-              -e APP_REVISION=x -e DB_PATH=/data/barbro.db "barbro-api:ci" >/dev/null
-            sleep 3
-            echo "$v: $(docker run --rm -v "$v:/v" busybox:1.37 stat -c '%u:%g %a' /v)"
-            docker logs "dbg-$v" 2>&1 | grep -m1 -E 'CANTOPEN|successfully started'
-            docker rm -f "dbg-$v" >/dev/null
-          done
+          export API_IMAGE=barbro-api:ci WEB_IMAGE=x
+          c="docker compose -p dbg -f infra/compose.yaml"
+          $c config api
+          $c up -d api
+          sleep 3
+          docker inspect -f '{{json .Mounts}}' dbg-api-1
+          docker run --rm -v dbg_api-data:/v busybox:1.37 stat -c '%u:%g %a' /v
+          $c logs api 2>&1 | grep -m1 -E 'CANTOPEN|successfully started'
 
       - name: Smoke test
         env:
