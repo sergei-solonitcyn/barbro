@@ -140,9 +140,16 @@ jobs:
 
       - name: Debug /data ownership (temporary)
         run: |
-          cid=$(docker create "barbro-${{ matrix.app }}:ci")
-          docker export "$cid" | tar -tvf - | grep -E ' data/?$' || echo "no /data in image"
-          docker rm "$cid" >/dev/null
+          [ "${{ matrix.app }}" = api ] || exit 0
+          docker volume create pre >/dev/null
+          for v in pre auto; do
+            docker run -d --name "dbg-$v" -v "$v:/data" \
+              -e APP_REVISION=x -e DB_PATH=/data/barbro.db "barbro-api:ci" >/dev/null
+            sleep 3
+            echo "$v: $(docker run --rm -v "$v:/v" busybox:1.37 stat -c '%u:%g %a' /v)"
+            docker logs "dbg-$v" 2>&1 | grep -m1 -E 'CANTOPEN|successfully started'
+            docker rm -f "dbg-$v" >/dev/null
+          done
 
       - name: Smoke test
         env:
