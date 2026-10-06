@@ -13,6 +13,7 @@ export const user = sqliteTable("user", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  debugField: integer("debug_field"),
 });
 
 export const userIdentity = sqliteTable(

@@ -54,6 +54,15 @@ jobs:
           cache: true
           node-version-file: .nvmrc
           require-lockfile: true
+      - name: Check migrations match schema
+        run: |
+          pnpm --filter @barbro/api exec drizzle-kit generate
+          drift="$(git status --porcelain apps/api/drizzle)"
+          if [ -n "$drift" ]; then
+            echo "$drift"
+            echo "schema.ts changed without a migration: run drizzle-kit generate" >&2
+            exit 1
+          fi
       - name: Run tests with coverage
         run: pnpm -r test:cov
 
