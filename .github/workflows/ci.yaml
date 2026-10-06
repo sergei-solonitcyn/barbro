@@ -138,6 +138,12 @@ jobs:
           push: false
           tags: barbro-${{matrix.app }}:ci
 
+      - name: Debug /data ownership (temporary)
+        run: |
+          docker create --name t barbro-${{ matrix.app }}:ci >/dev/null
+          docker export t | tar -tvf - | grep -E ' data/?$' || echo "no /data in image"
+          docker rm t >/dev/null
+
       - name: Smoke test
         env:
           IMAGE: barbro-${{matrix.app }}:ci

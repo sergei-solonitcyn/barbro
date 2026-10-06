@@ -15,6 +15,7 @@ coverage/
 .env
 .env.*
 !.env.example
+infra/compose.podman.local.yaml
 
 # Logs and runtime files
 *.log
