@@ -6,12 +6,23 @@ import { createTestApp } from "../testing/create-test-app.js";
 
 describe("GET /api/health", () => {
   let app: NestFastifyApplication;
+  const lines: string[] = [];
+  const logDestination = {
+    write: (line: string) => {
+      lines.push(line);
+    },
+  };
 
   beforeAll(async () => {
-    app = await createTestApp({
-      APP_REVISION: "abc123",
-      DB_PATH: ":memory:",
-    });
+    app = await createTestApp(
+      {
+        APP_REVISION: "abc123",
+        DB_PATH: ":memory:",
+      },
+      {
+        logDestination,
+      },
+    );
   });
 
   afterAll(async () => {
@@ -57,5 +68,21 @@ describe("GET /api/health", () => {
       db: "error",
       revision: "abc123",
     });
+  });
+
+  it("Logs contain request info without secrets and headers", async () => {
+    await app.inject({
+      method: "GET",
+      url: "/api/health?code=c0de-secret",
+      headers: {
+        cookie: "s3cret=t0ken",
+        authorization: "Bearer t0ken",
+      },
+    });
+    const log = lines.join("");
+    expect(log).toContain("request completed");
+    expect(log).not.toContain("c0de-secret");
+    expect(log).not.toContain("s3cret");
+    expect(log).not.toContain("t0ken");
   });
 });

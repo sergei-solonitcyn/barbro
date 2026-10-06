@@ -1,5 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { NestFastifyApplication } from "@nestjs/platform-fastify";
+import { Logger } from "nestjs-pino";
 import { ZodError, z } from "zod";
 import { AppModule } from "./app.module.js";
 import { configureApp, createAdapter } from "./app.setup.js";
@@ -23,8 +24,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule.forRoot(env),
     createAdapter(),
+    { bufferLogs: true },
   );
   configureApp(app);
+  app.useLogger(app.get(Logger));
   app.enableShutdownHooks();
   await app.listen(env.port, env.host);
 }

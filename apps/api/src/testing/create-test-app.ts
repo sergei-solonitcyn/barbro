@@ -6,10 +6,11 @@ import { type EnvSource, parseEnv } from "../config/env.js";
 
 export async function createTestApp(
   source: EnvSource = {},
+  options?: {},
 ): Promise<NestFastifyApplication> {
   const env = parseEnv(source);
   const moduleRef = await Test.createTestingModule({
-    imports: [AppModule.forRoot(env)],
+    imports: [AppModule.forRoot(env, options)],
   }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
     createAdapter(),
