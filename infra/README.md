@@ -88,6 +88,19 @@ docker run --rm -e DEBIAN_FRONTEND=noninteractive -v "$PWD/infra:/w:ro" debian:t
 
 Pass: a `Get:… trixie/stable … Packages` line and no `W:`/`E:` lines. The key's fingerprint must be `9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88` (`gpg --show-keys`).
 
+### Google client secret
+
+The API reads the OAuth client secret of `barbro-prod` from `/etc/barbro/google-client-secret`,
+mounted as a Compose secret. Create it by hand, readable by the API container user (65532) only:
+
+```
+   sudo install -m 0440 -o root -g 65532 /dev/null /etc/barbro/google-client-secret
+   sudoedit /etc/barbro/google-client-secret   # paste the secret on one line
+```
+
+A missing file stops Compose from creating the `api` container; an empty file fails config
+validation at startup. In both cases the deploy agent rolls back.
+
 ## Cloudflare Tunnel
 
 `cloudflared` connects out to Cloudflare and forwards every request for `barbro.dev` to `http://edge:8080`. The tunnel is remotely managed: its configuration lives in the Cloudflare dashboard, and the server holds only its token.
