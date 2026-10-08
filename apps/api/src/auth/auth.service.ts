@@ -1,12 +1,23 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { DB_CLIENT } from "../database.module.js";
 import { session, user, userIdentity } from "../db/schema.js";
 import { type VerifiedIdentity } from "./identity-provider.js";
+import { type SessionUser } from "./session-user.js";
 
-export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+export const SESSION_TTL_MS = 30 * DAY_MS;
+export const SESSION_ABSOLUTE_TTL_MS = 90 * DAY_MS;
+// Sliding renewal writes to the database at most once a day per session.
+const RENEW_INTERVAL_MS = DAY_MS;
+
+export interface Authenticated {
+  user: SessionUser;
+  // Set when the session was extended; the cookie must be re-issued with this lifetime.
+  renewedMaxAgeSeconds?: number;
+}
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -55,5 +66,52 @@ export class AuthService {
     });
 
     return token;
+  }
+
+  signOut(token: string): void {
+    this.db
+      .delete(session)
+      .where(eq(session.idHash, hashToken(token)))
+      .run();
+  }
+
+  // 30-day sliding lifetime, capped at 90 days from sign-in.
+  authenticate(token: string): Authenticated | undefined {
+    const now = new Date();
+    const idHash = hashToken(token);
+    const row = this.db
+      .select({
+        id: user.id,
+        email: user.email,
+        createdAt: session.createdAt,
+        expiresAt: session.expiresAt,
+      })
+      .from(session)
+      .innerJoin(user, eq(session.userId, user.id))
+      .where(and(eq(session.idHash, idHash), gt(session.expiresAt, now)))
+      .get();
+
+    if (!row) {
+      return undefined;
+    }
+
+    const sessionUser = { id: row.id, email: row.email };
+    const target = Math.min(
+      now.getTime() + SESSION_TTL_MS,
+      row.createdAt.getTime() + SESSION_ABSOLUTE_TTL_MS,
+    );
+    if (target - row.expiresAt.getTime() < RENEW_INTERVAL_MS) {
+      return { user: sessionUser };
+    }
+
+    this.db
+      .update(session)
+      .set({ expiresAt: new Date(target) })
+      .where(eq(session.idHash, idHash))
+      .run();
+    return {
+      user: sessionUser,
+      renewedMaxAgeSeconds: Math.floor((target - now.getTime()) / 1000),
+    };
   }
 }

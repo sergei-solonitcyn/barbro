@@ -1,4 +1,5 @@
 import { DynamicModule, Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
 import {
   DestinationStream,
@@ -10,6 +11,7 @@ import { ConfigModule } from "./config/config.module.js";
 import { Env } from "./config/env.js";
 import { DatabaseModule } from "./database.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { CsrfHeaderGuard } from "./security/csrf-header.guard.js";
 
 export interface AppModuleOptions {
   logDestination?: DestinationStream;
@@ -43,6 +45,12 @@ export class AppModule {
             ? [pinoOptions, options.logDestination]
             : pinoOptions,
         }),
+      ],
+      providers: [
+        {
+          provide: APP_GUARD,
+          useClass: CsrfHeaderGuard,
+        },
       ],
     };
   }
