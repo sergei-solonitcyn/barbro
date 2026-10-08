@@ -16,7 +16,7 @@ services:
     environment:
       - DB_PATH=/data/barbro.db
       # Public: the client ID is in every sign-in URL.
-      - GOOGLE_CLIENT_ID=844936264243-4uvauv1ubtdm9f1rmg237ibecsaqt1b7.apps.googleusercontent.com
+      - GOOGLE_CLIENT_ID=844936264243-08o25ep43ul7orfqpm0bc3ab0mvu6k4t.apps.googleusercontent.com
       - GOOGLE_CLIENT_SECRET_FILE=/run/secrets/google-client-secret
       - PUBLIC_ORIGIN=https://barbro.dev
     ports:
