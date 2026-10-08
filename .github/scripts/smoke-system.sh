@@ -16,7 +16,16 @@ base_url="http://127.0.0.1:8082"
 
 cleanup() {
   "${compose[@]}" down >/dev/null 2>&1 || true
+  rm -rf "$secret_dir"
 }
+
+# The API refuses to start without the secret file. A dummy is enough:
+# discovery is lazy, so the smoke test never contacts Google.
+secret_dir="$(mktemp -d)"
+printf 'smoke-test-secret' >"$secret_dir/google-client-secret"
+chmod 0444 "$secret_dir/google-client-secret"
+export GOOGLE_CLIENT_SECRET_PATH="$secret_dir/google-client-secret"
+
 trap cleanup EXIT
 
 fail() {
@@ -54,6 +63,9 @@ web_revision="$(curl -fsS --retry 30 --retry-delay 1 --retry-all-errors "$base_u
   || fail "GET /revision through edge did not succeed"
 [[ "$web_revision" == "$EXPECTED_REVISION" ]] \
   || fail "web revision is '$web_revision', expected '$EXPECTED_REVISION'"
+
+me_status="$(curl -sS -o /dev/null -w '%{http_code}' "$base_url/api/me")"
+[[ "$me_status" == "401" ]] || fail "GET /api/me without a session returned $me_status, expected 401"
 
 # Until the upstreams listen, the edge logs every retried request as an error.
 # Only log lines after this point count.
