@@ -1,22 +1,24 @@
 import { DynamicModule, Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
 import {
   DestinationStream,
   type SerializedRequest,
   type SerializedResponse,
 } from "pino";
-import { type Options } from "pino-http";
+import { AuthModule } from "./auth/auth.module.js";
 import { ConfigModule } from "./config/config.module.js";
 import { Env } from "./config/env.js";
 import { DatabaseModule } from "./database.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { CsrfHeaderGuard } from "./security/csrf-header.guard.js";
 
 export interface AppModuleOptions {
   logDestination?: DestinationStream;
 }
 
 @Module({
-  imports: [HealthModule],
+  imports: [HealthModule, AuthModule],
 })
 export class AppModule {
   static forRoot(env: Env, options?: AppModuleOptions): DynamicModule {
@@ -43,6 +45,12 @@ export class AppModule {
             ? [pinoOptions, options.logDestination]
             : pinoOptions,
         }),
+      ],
+      providers: [
+        {
+          provide: APP_GUARD,
+          useClass: CsrfHeaderGuard,
+        },
       ],
     };
   }

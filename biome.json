@@ -23,6 +23,21 @@
           "unsafeParameterDecoratorsEnabled": true
         }
       }
+    },
+    {
+      "includes": ["apps/api/src/**/*.module.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      },
+      "javascript": {
+        "parser": {
+          "unsafeParameterDecoratorsEnabled": true
+        }
+      }
     }
   ],
   "vcs": {

@@ -27,6 +27,7 @@ export class DatabaseModule implements OnApplicationShutdown {
   static forRoot(): DynamicModule {
     return {
       module: DatabaseModule,
+      global: true,
       providers: [
         {
           provide: SQLITE,
