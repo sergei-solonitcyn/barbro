@@ -26,7 +26,7 @@ async function bootstrap() {
     createAdapter(),
     { bufferLogs: true },
   );
-  configureApp(app);
+  await configureApp(app);
   app.useLogger(app.get(Logger));
   app.enableShutdownHooks();
   await app.listen(env.port, env.host);

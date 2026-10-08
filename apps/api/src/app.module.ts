@@ -5,7 +5,7 @@ import {
   type SerializedRequest,
   type SerializedResponse,
 } from "pino";
-import { type Options } from "pino-http";
+import { AuthModule } from "./auth/auth.module.js";
 import { ConfigModule } from "./config/config.module.js";
 import { Env } from "./config/env.js";
 import { DatabaseModule } from "./database.module.js";
@@ -16,7 +16,7 @@ export interface AppModuleOptions {
 }
 
 @Module({
-  imports: [HealthModule],
+  imports: [HealthModule, AuthModule],
 })
 export class AppModule {
   static forRoot(env: Env, options?: AppModuleOptions): DynamicModule {
