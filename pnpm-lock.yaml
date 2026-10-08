@@ -265,7 +265,7 @@ importers:
         specifier: 0.31.11
         version: 0.31.11
       jose:
-        specifier: ^6.2.12
+        specifier: 6.2.12
         version: 6.2.12
       typescript:
         specifier: 'catalog:'

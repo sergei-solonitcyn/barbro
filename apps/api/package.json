@@ -45,7 +45,7 @@
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "drizzle-kit": "0.31.11",
-    "jose": "^6.2.12",
+    "jose": "6.2.12",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
