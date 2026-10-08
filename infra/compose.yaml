@@ -71,12 +71,12 @@ services:
     stop_grace_period: 20s
 
 secrets:
+  google-client-secret:
+    # Created by hand on the server (root:65532, 0440); the CI smoke test points it at a dummy file.
+    file: ${GOOGLE_CLIENT_SECRET_PATH:-/etc/barbro/google-client-secret}
   tunnel-token:
     # Created by hand on the server; see infra/README.md.
     file: /etc/barbro/tunnel-token
-    google-client-secret:
-      # Created by hand on the server (root:65532, 0440); the CI smoke test points it at a dummy file.
-      file: ${GOOGLE_CLIENT_SECRET_PATH:-/etc/barbro/google-client-secret}
 
 volumes:
   api-data:
