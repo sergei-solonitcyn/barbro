@@ -90,6 +90,86 @@ describe("App", () => {
     expect(screen.getByText("Signed in as a@b.c")).toBeDefined();
   });
 
+  describe("account deletion", () => {
+    function signedIn() {
+      fetchMock.mockResolvedValueOnce(respond(200, { email: "a@b.c" }));
+      renderApp();
+    }
+
+    async function askToDelete() {
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Delete account" }),
+      );
+    }
+
+    it("asks for confirmation before deleting", async () => {
+      signedIn();
+
+      await askToDelete();
+
+      expect(
+        screen.getByText(
+          "This permanently deletes your account and signs you out on every device.",
+        ),
+      ).toBeDefined();
+      expect(
+        screen.getByRole("button", { name: "Delete permanently" }),
+      ).toBeDefined();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("cancel keeps the account", async () => {
+      signedIn();
+      await askToDelete();
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(
+        screen.queryByRole("button", { name: "Delete permanently" }),
+      ).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Delete account" }),
+      ).toBeDefined();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("deletes with the CSRF header and returns to the sign-in link", async () => {
+      signedIn();
+      fetchMock.mockResolvedValueOnce(respond(204));
+      await askToDelete();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Delete permanently" }),
+      );
+
+      expect(
+        await screen.findByRole("link", { name: "Sign in with Google" }),
+      ).toBeDefined();
+      expect(screen.getByRole("status").textContent).toBe(
+        "Your account has been deleted.",
+      );
+      expect(fetchMock).toHaveBeenLastCalledWith("/api/me", {
+        method: "DELETE",
+        headers: { "X-Requested-With": "fetch" },
+      });
+    });
+
+    it("tells the user when deletion fails", async () => {
+      signedIn();
+      fetchMock.mockResolvedValueOnce(respond(500));
+      await askToDelete();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Delete permanently" }),
+      );
+
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "Account deletion failed. Please try again.",
+      );
+      expect(screen.getByText("Signed in as a@b.c")).toBeDefined();
+    });
+  });
+
   it("tells the user when the account cannot be loaded", async () => {
     fetchMock.mockResolvedValue(respond(500));
     renderApp();

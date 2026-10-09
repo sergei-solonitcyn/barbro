@@ -13,7 +13,7 @@ import {
   vi,
 } from "vitest";
 import { DB_CLIENT } from "../database.module.js";
-import { userIdentity } from "../db/schema.js";
+import { session, user, userIdentity } from "../db/schema.js";
 import { createTestApp } from "../testing/create-test-app.js";
 import type { IdentityProvider } from "./identity-provider.js";
 
@@ -243,6 +243,98 @@ describe("Google sign-in", () => {
 
     expect((await logout(token, {})).statusCode).toBe(403);
     expect((await me(token)).statusCode).toBe(200);
+  });
+
+  describe("account deletion", () => {
+    function deleteMe(
+      sessionCookie?: string,
+      headers: Record<string, string> = { "x-requested-with": "fetch" },
+    ) {
+      return app.inject({
+        method: "DELETE",
+        url: "/api/me",
+        headers,
+        cookies:
+          sessionCookie === undefined ? {} : { barbro_session: sessionCookie },
+      });
+    }
+
+    async function signInAs(subject: string): Promise<string> {
+      completeAuthorization.mockResolvedValueOnce({
+        email: `${subject}@b.c`,
+        emailVerified: true,
+        subject,
+      });
+      return signIn();
+    }
+
+    function userIdOf(subject: string): number | undefined {
+      const db = app.get<BetterSQLite3Database>(DB_CLIENT);
+      return db
+        .select({ userId: userIdentity.userId })
+        .from(userIdentity)
+        .where(eq(userIdentity.subject, subject))
+        .get()?.userId;
+    }
+
+    it("DELETE /api/me deletes the user, its identities and every session, and clears the cookie", async () => {
+      const token = await signInAs("del1");
+      const otherDevice = await signInAs("del1");
+      const userId = userIdOf("del1");
+      if (userId === undefined) {
+        throw new Error("sign-in created no user");
+      }
+
+      const res = await deleteMe(token);
+
+      expect(res.statusCode).toBe(204);
+      expect(
+        res.cookies.find((c) => c.name === "barbro_session"),
+      ).toMatchObject({
+        value: "",
+        maxAge: 0,
+        path: "/",
+      });
+      const db = app.get<BetterSQLite3Database>(DB_CLIENT);
+      expect(db.select().from(user).where(eq(user.id, userId)).all()).toEqual(
+        [],
+      );
+      expect(userIdOf("del1")).toBeUndefined();
+      expect(
+        db.select().from(session).where(eq(session.userId, userId)).all(),
+      ).toEqual([]);
+      expect((await me(otherDevice)).statusCode).toBe(401);
+    });
+
+    it("keeps other users' accounts", async () => {
+      const keep = await signInAs("keep1");
+
+      expect((await deleteMe(await signInAs("del2"))).statusCode).toBe(204);
+
+      expect((await me(keep)).statusCode).toBe(200);
+    });
+
+    it("signing in again after deletion creates a new user", async () => {
+      await deleteMe(await signInAs("del3"));
+      const before = userIdOf("del3");
+
+      await signInAs("del3");
+
+      expect(before).toBeUndefined();
+      expect(userIdOf("del3")).toBeDefined();
+    });
+
+    it("without a session returns 401", async () => {
+      expect((await deleteMe()).statusCode).toBe(401);
+    });
+
+    it("without X-Requested-With is rejected and keeps the account", async () => {
+      const token = await signInAs("del4");
+
+      expect((await deleteMe(token, {})).statusCode).toBe(403);
+      expect((await me(token)).statusCode).toBe(200);
+      expect(userIdOf("del4")).toBeDefined();
+    });
   });
 
   describe("sliding session lifetime", () => {

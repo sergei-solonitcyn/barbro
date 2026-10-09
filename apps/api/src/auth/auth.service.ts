@@ -75,6 +75,11 @@ export class AuthService {
       .run();
   }
 
+  // Hard delete. The foreign keys cascade to user_identity and to every session of the user.
+  deleteUser(userId: number): void {
+    this.db.delete(user).where(eq(user.id, userId)).run();
+  }
+
   // 30-day sliding lifetime, capped at 90 days from sign-in.
   authenticate(token: string): Authenticated | undefined {
     const now = new Date();

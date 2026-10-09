@@ -67,6 +67,10 @@ web_revision="$(curl -fsS --retry 30 --retry-delay 1 --retry-all-errors "$base_u
 me_status="$(curl -sS -o /dev/null -w '%{http_code}' "$base_url/api/me")"
 [[ "$me_status" == "401" ]] || fail "GET /api/me without a session returned $me_status, expected 401"
 
+csrf_status="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE "$base_url/api/me")"
+[[ "$csrf_status" == "403" ]] \
+  || fail "DELETE /api/me without X-Requested-With returned $csrf_status, expected 403"
+
 # Until the upstreams listen, the edge logs every retried request as an error.
 # Only log lines after this point count.
 startup_lines="$("${compose[@]}" logs edge 2>&1 | wc -l)"
