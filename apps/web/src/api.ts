@@ -24,3 +24,13 @@ export async function logout(): Promise<void> {
     throw new Error(`POST /api/auth/logout failed with ${res.status}`);
   }
 }
+
+export async function deleteAccount(): Promise<void> {
+  const res = await fetch("/api/me", {
+    method: "DELETE",
+    headers: { "X-Requested-With": "fetch" },
+  });
+  if (!res.ok) {
+    throw new Error(`DELETE /api/me failed with ${res.status}`);
+  }
+}
