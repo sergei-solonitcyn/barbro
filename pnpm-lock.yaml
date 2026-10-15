@@ -182,7 +182,7 @@ catalogs:
       version: 4.1.11
     zod:
       specifier: ^4.6.5
-      version: 4.6.6
+      version: 4.6.7
 
 importers:
 
@@ -241,7 +241,7 @@ importers:
         version: 7.8.2
       zod:
         specifier: 'catalog:'
-        version: 4.6.6
+        version: 4.6.7
     devDependencies:
       '@nestjs/cli':
         specifier: 12.0.8
@@ -2512,8 +2512,8 @@ packages:
     resolution: {integrity: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==}
     engines: {node: '>=18'}
 
-  zod@4.6.6:
-    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -4264,4 +4264,4 @@ snapshots:
 
   yoctocolors@2.2.0: {}
 
-  zod@4.6.6: {}
+  zod@4.6.7: {}
