@@ -16,7 +16,7 @@ RUN pnpm --filter @barbro/api deploy --prod /out
 
 RUN mkdir /data-dir
 
-FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:044d090d0c3ccfd30722126ebe46704885698970c8a303419dc0d704d628f0da AS runtime
+FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:bf14c9d80c1cc1430416fc164f7eb4b7b7a754259010530feac065dccd98035c AS runtime
 
 WORKDIR /app
 
