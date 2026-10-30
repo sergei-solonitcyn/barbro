@@ -202,7 +202,7 @@ importers:
     dependencies:
       '@fastify/cookie':
         specifier: ^11.1.2
-        version: 11.1.3
+        version: 11.1.5
       '@nestjs/common':
         specifier: ^12.0.1
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
@@ -961,8 +961,8 @@ packages:
   '@fastify/ajv-compiler@4.0.6':
     resolution: {integrity: sha512-NtuzM0SfaMJbGlnjr9LWQUN5LzgSrbB8tf/wRZNas+4E1O/Nmzl53e7ruT61HDZyRCJGC6FxIogmNZO1c5ETBA==}
 
-  '@fastify/cookie@11.1.3':
-    resolution: {integrity: sha512-RBhlMNsmSG6C5KGiTkhSXBF75xIrUMSytDDBcpnVewhJ8XVYnJTu+SV6FYKXClIRsBuRjOfKbBSULvnPD3X/mg==}
+  '@fastify/cookie@11.1.5':
+    resolution: {integrity: sha512-hs7e0otf7n/lJMpt63EFdQb5/u8kO6DeexEtLPVTybSdItC6SwJ1O0vtTyWvKNR70LZcHLlsUr/y3jFpqtyWRA==}
 
   '@fastify/cors@11.3.1':
     resolution: {integrity: sha512-gZXNzd6FLHzOIfvoK4+Az3Wko2V6Y0MIsLxpyo4AEYl7a9q1JBPwPaxLea4nkr++8FCiJiPpYYo6E02uZW0dqw==}
@@ -2917,7 +2917,7 @@ snapshots:
       ajv-formats: 3.0.1
       fast-uri: 4.2.1
 
-  '@fastify/cookie@11.1.3':
+  '@fastify/cookie@11.1.5':
     dependencies:
       cookie: 2.0.1
       fastify-plugin: 6.0.0
