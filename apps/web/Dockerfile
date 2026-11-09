@@ -13,7 +13,7 @@ COPY . .
 RUN pnpm --filter @barbro/web... install --offline --frozen-lockfile
 RUN pnpm --filter @barbro/web... build
 
-FROM caddy:2.11.8-alpine@sha256:f6228111e5fafa1a5238258d0858e103f10599b8d1659a146e7726681a002bb9 AS runtime
+FROM caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee AS runtime
 
 RUN setcap -r /usr/bin/caddy
 
